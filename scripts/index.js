@@ -1,5 +1,11 @@
+let basketList = [];
+let basketCount = document.querySelector('.basket__count');
+let basketText = document.querySelector('.basket-text');
 
-let products = [
+
+const state = new Proxy({
+  basketList: [],
+  products: [
   {
     id: 0,
     preview: './images/1.svg',
@@ -24,241 +30,253 @@ let products = [
   {
     id: 3,
     preview: './images/1.svg',
-    title: '',
+    title: 'Значимость этих проблем настолько очевидна, что укрепление и развитие структуры',
     description: 'Устрицы по Русски',
     price: 1000
   }
-]
+  ],
+  isBasketOpen: false,
+  basketListId: null,
+},{
+  set: (targetObject, property, value) =>  {
+    targetObject[property] = value;
 
-window.onload = () => {
-  renderProductsCardsToDom();
-}
-
-// Пример объекта добавленного в корзину
-// let basketList = [
-//   {
-//     id: 0,
-//     preview: './images/1.svg',
-//     title: 'Устрицы по рокфеллеровски',
-//     count: 1,
-//     price: 2700
-//   },
-// ]
-
-let basketList = [];
-let basketCount = document.querySelector('.basket__count');
-let basketText = document.querySelector('.basket-text')
-
-// класс и метод для создания карточки продукта
-class ProductsCard  {
-  constructor ({ id, preview, title, description, price})  {
-    this.id = id;
-    this.preview = preview;
-    this.title = title;
-    this.description = description;
-    this.price = price;
+    if (property === 'basketList')  {
+      localStorage.setItem('basket', JSON.stringify(targetObject.basketList));
+      updateBasketSum();
+    }
+    if (property === 'isBasketOpen') openBasket();
   }
+})
 
-  generateProductsCard()  {
-    let productsCard = document.createElement('div');
+const renderCards = () =>  {
+  const productsList = document.querySelector('.products-list');
+  productsList.innerHTML = '';
+
+  state.products.forEach(product =>  {
+    const { id, preview, title, description, price} = product;
+    const productsCard = document.createElement('div');
     productsCard.classList.add('products-card');
-    productsCard.setAttribute('data-id', this.id);
-    productsCard.setAttribute('data-preview', this.preview);
-    productsCard.setAttribute('data-description', this.description);
-    productsCard.setAttribute('data-price', this.price);
+    productsCard.setAttribute('data-id', id);
 
-    let productsCardPreview = document.createElement('img');
+    const productsCardPreview = document.createElement('img');
+    productsCardPreview.src = preview;
     productsCardPreview.classList.add('products-card__preview');
-    productsCardPreview.src = `./images/${this.id}.svg`;
-    productsCard.append(productsCardPreview);
 
-    let productsCardTitle = document.createElement('h2');
+    const productsCardTitle = document.createElement('h2');
     productsCardTitle.classList.add('products-card__title');
-    productsCardTitle.innerHTML = `${this.title}`;
-    productsCard.append(productsCardTitle);
+    productsCardTitle.textContent = title;
 
-    let productsCardDescription = document.createElement('p');
+    const productsCardDescription = document.createElement('p');
     productsCardDescription.classList.add('products-card__description');
-    productsCardDescription.innerHTML = `${this.description}`;
-    productsCard.append(productsCardDescription);
+    productsCardDescription.textContent = description;
 
-    let productsCardBottom = document.createElement('div');
+    productsCard.appendChild(productsCardPreview);
+    productsCard.appendChild(productsCardTitle);
+    productsCard.appendChild(productsCardDescription);
+
+    const productsCardBottom = document.createElement('div');
     productsCardBottom.classList.add('products-card__bottom');
 
-    let productsCardPrice = document.createElement('span');
+    const productsCardPrice = document.createElement('span');
     productsCardPrice.classList.add('products-card__bottom-price');
-    productsCardPrice.innerHTML = `${this.price} ₽`;
+    productsCardPrice.textContent = `${price} ₽`;
 
-    let productsCardBtn = document.createElement('button');
-    productsCardBtn.classList.add('products-card__bottom-btn');
-    productsCardBtn.id = 'add-basket';
-
-    //добавление продукта в корзину (в массив products)
-    productsCardBtn.addEventListener('click', () =>  {
-      basketList.push(products[this.id]);
-      basketCount.innerHTML = `${basketList.length}`;
+    const productsCardButton = document.createElement('button');
+    productsCardButton.classList.add('products-card__bottom-btn');
+    productsCardButton.addEventListener('click', () =>  {
+      const basketListForProxy = [...state.basketList];
+      const addedProductIndex = basketListForProxy.findIndex(item => item.id === id);
+      if (addedProductIndex >= 0)  {
+        basketListForProxy[addedProductIndex] = {
+          ...basketListForProxy[addedProductIndex],
+          count: basketListForProxy[addedProductIndex].count + 1
+        }
+      } else  {
+        basketListForProxy.push({
+          ...state.products[id],
+          count: 1
+        })
+      }
+      state.basketList = basketListForProxy;
       updateBasketSum();
     })
 
-    productsCardBottom.append(productsCardPrice);
-    productsCardBottom.append(productsCardBtn);
+    productsCardBottom.appendChild(productsCardPrice);
+    productsCardBottom.appendChild(productsCardButton);
 
-    productsCard.append(productsCardBottom);
+    productsCard.appendChild(productsCardBottom);
 
-    return productsCard;
-  }
-}
-
-// функция для создания массива карточек с продуктами
-const generateProductsCards = (products) =>  {
-  let productsCards = [];
-  products.forEach(productsCard =>  {
-    productsCards.push(new ProductsCard(productsCard));
+    productsList.appendChild(productsCard);
   })
-  return productsCards;
 }
 
-//функция для добавления карточки с продуктами в DOM
-const renderProductsCardsToDom = () =>  {
-  let productsCardsWrapper = document.querySelector('.products-list');
-  generateProductsCards(products).forEach(productsCard =>  {
-    productsCardsWrapper.append(productsCard.generateProductsCard())
-  });
-}
-
-
-const openBusket = ()  =>  {
- let modal = document.createElement('div');
- modal.classList.add('modal');
- document.body.append(modal);
- modal.style.visibility = 'visible';
-
- let modalOverlay = document.createElement('div');
- modalOverlay.classList.add('modal__overlay');
- modal.append(modalOverlay);
-
- let modalInner = document.createElement('div');
- modalInner.classList.add('modal__inner');
- modal.append(modalInner);
-
- let closeBtn = document.createElement('span');
- closeBtn.classList.add('modal__inner-close');
- modalInner.append(closeBtn);
-
- closeBtn.addEventListener('click', () =>  {
-  modal.remove();
- });
-
- let modalInnerTitle = document.createElement('h3');
- modalInnerTitle.innerText = 'Корзина с выбранными товарами';
- modalInnerTitle.classList.add('modal__inner-title');
- modalInner.append(modalInnerTitle);
-
- let modalInnerList = document.createElement('div');
- modalInnerList.classList.add('modal__inner-list');
- modalInner.append(modalInnerList);
-
-generateBasketCards(basketList).forEach(basketCard =>  {
-  modalInnerList.append(basketCard.generateBasketCard())
-})
-}
-
-// класс и метод для создания карточки в корзине
-class BasketCard  {
-  constructor ({ id, preview, title, description, price})  {
-    this.id = id;
-    this.preview = preview;
-    this.title = title;
-    this.description = description;
-    this.price = price;
+const openBasket = () =>  {
+  if (state.isBasketOpen === false)  {
+    const modal = document.querySelector('.modal');
+    modal.remove();
   }
+  const modal = document.createElement('div');
+  modal.classList.add('modal');
+  document.body.append(modal);
+  modal.style.visibility = 'visible';
 
-  generateBasketCard()  {
-    let basketCard = document.createElement('div');
-    basketCard.classList.add('products-card');
-    basketCard.setAttribute('data-id', this.id);
-    basketCard.setAttribute('data-preview', this.preview);
-    basketCard.setAttribute('data-description', this.description);
-    basketCard.setAttribute('data-price', this.price);
 
-    let basketCardPreview = document.createElement('img');
-    basketCardPreview.classList.add('products-card__preview');
-    basketCardPreview.src = `./images/${this.id}.svg`;
-    basketCard.append(basketCardPreview);
+  const modalOverlay = document.createElement('div');
+  modalOverlay.classList.add('modal__overlay');
+  modal.append(modalOverlay);
 
-    let basketCardTitle = document.createElement('h2');
-    basketCardTitle.classList.add('products-card__title');
-    basketCardTitle.innerHTML = `${this.title}`;
-    basketCard.append(basketCardTitle);
+
+  const modalInner = document.createElement('div');
+  modalInner.classList.add('modal__inner');
+  modal.append(modalInner);
+
+  const modalInnerClose = document.createElement('span');
+  modalInnerClose.classList.add('modal__inner-close');
+  modalInner.append(modalInnerClose);
+  modalInnerClose.addEventListener('click', () =>  {
+    modal.remove();
+    // state.isBasketOpen = false;
+    });
+
+  const modalInnerTitle = document.createElement('h3');
+  modalInnerTitle.classList.add('modal__inner-title');
+  modalInnerTitle.textContent = 'Корзина с выбранными товарами';
+  modalInner.append(modalInnerTitle);
+
+  const modalInnerList = document.createElement('div');
+  modalInnerList.classList.add('modal__inner-list');
+  modalInner.append(modalInnerList);
+
+
+  state.basketList.forEach(product =>  {
+    const { id, preview, title, count, price } = product;
+    const productsCard = document.createElement('div');
+    productsCard.classList.add('products-card');
+    productsCard.setAttribute('data-id', id);
+
+    const productsCardPreview = document.createElement('img');
+    productsCardPreview.src = preview;
+    productsCardPreview.classList.add('products-card__preview');
+    productsCard.append(productsCardPreview);
+
+    const productsCardTitle = document.createElement('h2');
+    productsCardTitle.classList.add('products-card__title');
+    productsCardTitle.textContent = title;
+    productsCard.append(productsCardTitle);
 
     let basketCardCount = document.createElement('div');
     basketCardCount.classList.add('products-card__count', 'card__count');
 
     let countMinus = document.createElement('span');
     countMinus.classList.add('card__count-minus');
-    countMinus.innerHTML = `-`;
+    countMinus.textContent = `-`;
     countMinus.id = 'plus';
+    countMinus.addEventListener('click', () => {
+      const basketListForProxy = [...state.basketList]
+      const addedProductIndex = basketListForProxy.findIndex(item => item.id === id);
+
+      if (addedProductIndex >= 0) {
+        if (basketListForProxy[addedProductIndex].count > 1) {
+          basketListForProxy[addedProductIndex] = {
+          ...basketListForProxy[addedProductIndex],
+          count: basketListForProxy[addedProductIndex].count - 1
+          }
+        } else {
+          basketListForProxy.splice(addedProductIndex, 1);
+          productsCard.remove();
+          updateBasketSum();
+        }
+        state.basketList = basketListForProxy;
+      }
+    });
 
 
     let countResult = document.createElement('span');
     countResult.classList.add('card__count-result');
-    countResult.innerHTML = `1`;
+    countResult.textContent = product.count || 1;
     countResult.id = 'count-product';
 
     let countPlus = document.createElement('span');
     countPlus.classList.add('card__count-plus');
-    countPlus.innerHTML = `+`;
+    countPlus.textContent = `+`;
     countPlus.id = 'minus';
+    countPlus.addEventListener('click', () => {
+      const basketListForProxy = [...state.basketList]
+      const addedProductIndex = basketListForProxy.findIndex(item => item.id === id);
+
+      if (addedProductIndex >= 0) {
+        basketListForProxy[addedProductIndex] = {
+        ...basketListForProxy[addedProductIndex],
+        count: basketListForProxy[addedProductIndex].count + 1
+      }
+        updateBasketSum();
+        state.basketList = basketListForProxy;
+      }
+    });
+
 
     basketCardCount.append(countMinus, countResult, countPlus);
-    basketCard.append(basketCardCount);
+    productsCard.append(basketCardCount);
 
     let basketCardBottom = document.createElement('div');
     basketCardBottom.classList.add('products-card__bottom');
 
     let basketCardPrice = document.createElement('span');
     basketCardPrice.classList.add('products-card__bottom-price');
-    basketCardPrice.innerHTML = `${this.price}`;
+    basketCardPrice.textContent = `${price * (product.count || 1)} ₽`;
 
     let basketCardBtn = document.createElement('button');
     basketCardBtn.classList.add('products-card__bottom-btn');
     basketCardBtn.id = 'remove-basket';
-
-    // удаление продукта из списка
     basketCardBtn.addEventListener('click', () =>  {
-      const index = basketList.findIndex(item => item.id === this.id);
-      basketList.splice(index, 1); //удаляем продукт из массива basketList
-      basketCount.innerHTML = `${basketList.length}`;
-      updateBasketSum();
-      basketCard.remove();
+      const basketListForProxy = [...state.basketList]
+      const addedProductIndex = basketListForProxy.findIndex(item => item.id === id);
+      if (addedProductIndex >= 0) {
+        basketListForProxy.splice(addedProductIndex, 1);
+        state.basketList = basketListForProxy;
+        productsCard.remove();
+        updateBasketSum();
+      }
     })
 
     basketCardBottom.append(basketCardPrice, basketCardBtn);
 
-    basketCard.append(basketCardBottom);
+    productsCard.append(basketCardBottom);
+    modalInnerList.append(productsCard);
+  })
+}
 
-    return basketCard;
+window.onload = () => {
+  renderCards();
+  updateBasketSum();
+}
+
+const loadBasket = () =>  {
+  const loadedBasket = localStorage.getItem('basket');
+  if (loadedBasket)  {
+    state.basketList = JSON.parse(loadedBasket);
+    updateBasketSum();
   }
 }
 
 // функция для подсчёта общей суммы
 const updateBasketSum = () =>  {
-  const sum = basketList.reduce((sum, item) => sum + item.price, 0);
-  basketText.innerHTML = `${basketList.length} товара <br> на сумму ${sum.toString()} ₽`;
-}
+  const totalItems = state.basketList.reduce((sum, item) => sum + item.count, 0);
+  const totalSum = state.basketList.reduce((sum, item) => sum + (item.price * item.count), 0);
+  basketText.innerHTML = `${totalItems} товара <br> на сумму ${totalSum} ₽`;
+  basketCount.innerHTML = `${totalItems}`;
 
-// функция для создания массива карточек с продуктами в корзине
-const generateBasketCards = (basketList) =>  {
-  let basketCards = [];
-  basketList.forEach(basketCard =>  {
-    basketCards.push(new BasketCard(basketCard));
-  })
-  return basketCards;
+  document.querySelectorAll('.products-card__bottom-price').forEach((priceElement, index) => {
+    if (state.basketList[index]) {
+      priceElement.textContent = `${state.basketList[index].price * state.basketList[index].count} ₽`;
+    }
+  });
 }
 
 const busket = document.querySelector('.header__inner-products');
 busket.addEventListener('click', () =>  {
-  openBusket();
+  state.isBasketOpen = true;
 });
 
-
+loadBasket();

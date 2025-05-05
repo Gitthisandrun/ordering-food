@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Auth</title>
+  <link rel="stylesheet" href="./css/style.css">
+</head>
+<body>
+  <div class="welcome">
+    <div class="auth">
+      <div class="auth__links">
+        <a class="auth__link" id="auth-reg">Зарегистрироваться</a>
+        <a class="auth__link active" id="auth-login">Войти</a>
+      </div>
+      <form id="login-form">
+        <fieldset>
+          <legend>ВХОД</legend>
+          <p><label for="login"></label><input type="text" id="login" placeholder="Логин" required></p>
+          <p><label for="password"></label><input type="password" id="password" placeholder="Пароль" required></p>
+        </fieldset>
+        <p><input type="submit" value="Войти"></p>
+      </form>
+      <form id="reg-form">
+        <fieldset>
+          <legend>РЕГИСТРАЦИЯ</legend>
+          <p><label for="reg-login"></label><input type="text" id="reg-login" placeholder="Логин" required></p>
+          <p><label for="reg-password"></label><input type="password" id="reg-password" placeholder="Пароль" required></p>
+        </fieldset>
+        <p><input type="submit" value="Зарегистрироваться"></p>
+      </form>
+    </div>
+  </div>
+  <script src="./scripts/auth.js"></script>
+</body>
+</html>

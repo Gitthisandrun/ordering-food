@@ -2,9 +2,15 @@ let basketList = [];
 let basketCount = document.querySelector('.basket__count');
 let basketText = document.querySelector('.basket-text');
 
+document.getElementById('signout').addEventListener('click', () => {
+  localStorage.setItem('isAuth', JSON.stringify(false));
+  window.location.href = '../auth.html';
+});
+
 
 const state = new Proxy({
-  basketList: [],
+  basketList: localStorage.getItem('basket'),
+  // basketList: [],
   products: [
   {
     id: 0,
@@ -175,7 +181,7 @@ const openBasket = () =>  {
     countMinus.addEventListener('click', () => {
       const basketListForProxy = [...state.basketList]
       const addedProductIndex = basketListForProxy.findIndex(item => item.id === id);
-
+      
       if (addedProductIndex >= 0) {
         if (basketListForProxy[addedProductIndex].count > 1) {
           basketListForProxy[addedProductIndex] = {
@@ -204,7 +210,7 @@ const openBasket = () =>  {
     countPlus.addEventListener('click', () => {
       const basketListForProxy = [...state.basketList]
       const addedProductIndex = basketListForProxy.findIndex(item => item.id === id);
-
+      
       if (addedProductIndex >= 0) {
         basketListForProxy[addedProductIndex] = {
         ...basketListForProxy[addedProductIndex],
@@ -247,11 +253,6 @@ const openBasket = () =>  {
   })
 }
 
-window.onload = () => {
-  renderCards();
-  updateBasketSum();
-}
-
 const loadBasket = () =>  {
   const loadedBasket = localStorage.getItem('basket');
   if (loadedBasket)  {
@@ -259,6 +260,17 @@ const loadBasket = () =>  {
     updateBasketSum();
   }
 }
+
+// // Пример объекта добавленного в корзину
+// // let basketList = [
+// //   {
+// //     id: 0,
+// //     preview: './images/1.svg',
+// //     title: 'Устрицы по рокфеллеровски',
+// //     count: 1,
+// //     price: 2700
+// //   },
+// // ]
 
 // функция для подсчёта общей суммы
 const updateBasketSum = () =>  {
@@ -280,3 +292,55 @@ busket.addEventListener('click', () =>  {
 });
 
 loadBasket();
+
+window.onload = () => {
+  renderCards();
+  updateBasketSum();
+}
+
+
+let products = [
+  {
+    id: 0,
+    preview: './images/1.svg',
+    title: 'Устрицы по рокфеллеровски',
+    description: 'Значимость этих проблем настолько очевидна, что укрепление и развитие структуры',
+    price: 2700
+  },
+  {
+    id: 1,
+    preview: './images/2.svg',
+    title: 'Свиные ребрышки на гриле с зеленью',
+    description: 'Не следует, однако забывать, что реализация намеченных плановых',
+    price: 1600
+  },
+  {
+    id: 2,
+    preview: './images/3.svg',
+    title: 'Креветки по-королевски в лимонном соке',
+    description: 'Значимость этих проблем настолько очевидна, что укрепление и развитие структуры обеспечивает широкому кругу',
+    price: 1820
+  },
+  {
+    id: 3,
+    preview: './images/1.svg',
+    title: 'Значимость этих проблем настолько очевидна, что укрепление и развитие структуры',
+    description: 'Устрицы по Русски',
+    price: 1000
+  }
+  ]
+document.addEventListener('DOMContentLoaded', () =>  {
+  if(!localStorage.products)  {
+    localStorage.setItem('basket', JSON.stringify([]));
+  }
+
+  if(!localStorage.isAuth)  {
+    localStorage.setItem('isAuth', JSON.stringify(false));
+    window.location.href = '../auth.html';
+  } else  {
+    if (!JSON.parse(localStorage.isAuth))
+    window.location.href = '../auth.html';
+  }
+})
+
+
